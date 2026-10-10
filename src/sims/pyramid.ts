@@ -9,7 +9,7 @@
  * Params: base (side of the square, default 230.3), height (default
  * 146.6, as built; it stands 138.5 today), courses (default 210).
  */
-import { BufferAttribute, BufferGeometry, Group, Mesh, MeshStandardMaterial } from "three";
+import { BufferAttribute, BufferGeometry, DoubleSide, Group, Mesh, MeshStandardMaterial } from "three";
 import { num, type Program } from "./index";
 
 /** A square pyramid as stepped courses: each a ring of four vertical faces and four ledges. */
@@ -58,7 +58,8 @@ export const pyramid: Program = (params) => {
   const height = num(params, "height", 146.6);
   const courses = Math.round(num(params, "courses", 210));
   const geometry = steppedPyramid(base, height, courses);
-  const material = new MeshStandardMaterial({ color: 0xc9b48a, roughness: 0.95, flatShading: true, vertexColors: true });
+  // Both sides: nothing stops a visitor walking in, and inside they should see stone, not sky.
+  const material = new MeshStandardMaterial({ color: 0xc9b48a, roughness: 0.95, flatShading: true, vertexColors: true, side: DoubleSide });
   // The scene's fog ends a couple of hundred metres out, which would swallow a
   // thing meant to be seen from afar; it gets a longer haze of its own instead.
   material.onBeforeCompile = (shader) => {
