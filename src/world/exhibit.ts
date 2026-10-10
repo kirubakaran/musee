@@ -7,9 +7,13 @@
  * placards, the dearest part, only exist within reading distance.
  */
 import {
+  AdditiveBlending,
   BackSide,
   Box3,
   CanvasTexture,
+  CylinderGeometry,
+  Quaternion,
+  Raycaster,
   CircleGeometry,
   DoubleSide,
   FrontSide,
@@ -181,6 +185,7 @@ export class Exhibit {
   /** Keeps everything below its height; raised to let the walls up. */
   private readonly revealPlane = new Plane(new Vector3(0, -1, 0), 0);
   private plan: { canvas: HTMLCanvasElement; w: number; d: number } | null = null;
+  private beam: Group | null = null;
   private planTexture: CanvasTexture | null = null;
   /** In a visitor's hand: a sharper rung that arrives meanwhile waits until it is put down. */
   private held = false;
@@ -486,11 +491,68 @@ export class Exhibit {
     if (this.artwork.display.reveal != null) this.applyRevealCut();
   }
 
-  /** After a root is in the scene: the blueprint needs world positions. */
+  /** After a root is in the scene: the blueprint and the sunbeam need world positions. */
   private rootAdded(root: Group) {
-    if (this.artwork.display.reveal == null) return;
+    const d = this.artwork.display;
+    if (d.reveal == null && !(d.oculus && d.sky?.sun)) return;
     this.group.updateMatrixWorld(true);
-    this.drawPlan(root);
+    if (d.reveal != null) this.drawPlan(root);
+    if (d.oculus && d.sky?.sun) this.buildBeam(root);
+  }
+
+  /**
+   * The sun through an opening: a ray from the oculus along the sun's
+   * line finds where it lands on the model, and a soft shaft of light is
+   * drawn to that point with a bright disc on the wall. The scan's own
+   * lighting is baked into its photographs, so this is the only way the
+   * sun can mark it.
+   */
+  private buildBeam(root: Group) {
+    const o = this.artwork.display.oculus!;
+    const sun = this.artwork.display.sky!.sun!;
+    const DEG = Math.PI / 180;
+    const az = sun.azimuth * DEG, alt = sun.altitude * DEG;
+    const toSun = new Vector3(Math.sin(az) * Math.cos(alt), Math.sin(alt), -Math.cos(az) * Math.cos(alt));
+    const dir = toSun.clone().negate();
+    const origin = new Vector3(o.x, baseHeightOf(this.artwork) + o.y, o.z).applyMatrix4(this.group.matrixWorld);
+    const hit = new Raycaster(origin, dir, 0.5, 200).intersectObject(root, true).find((h) => (h.object as Mesh).name !== "backing");
+    if (!hit) return;
+    if (this.beam) {
+      this.group.remove(this.beam);
+      this.beam.traverse((m) => m instanceof Mesh && (m.geometry.dispose(), (m.material as Material).dispose()));
+    }
+    // Everything in the exhibit's own frame, so it moves with it.
+    const inv = this.group.matrixWorld.clone().invert();
+    const start = origin.clone().applyMatrix4(inv);
+    const end = hit.point.clone().applyMatrix4(inv);
+    const localDir = end.clone().sub(start).normalize();
+    const beam = new Group();
+    beam.name = "sunbeam";
+    const length = start.distanceTo(end);
+    const quat = new Quaternion().setFromUnitVectors(new Vector3(0, 1, 0), localDir);
+    const mid = start.clone().addScaledVector(localDir, length / 2);
+    // Nested shells, faint, so the shaft has a soft core and no hard edge.
+    for (const [k, opacity] of [[1, 0.07], [0.8, 0.08], [0.6, 0.1], [0.4, 0.12]] as const) {
+      const shell = new Mesh(
+        new CylinderGeometry(o.radius * k, o.radius * k, length, 32, 1, true),
+        new MeshBasicMaterial({ color: 0xfff0cf, transparent: true, opacity, blending: AdditiveBlending, depthWrite: false, side: DoubleSide, toneMapped: false }),
+      );
+      shell.quaternion.copy(quat);
+      shell.position.copy(mid);
+      beam.add(shell);
+    }
+    // The disc where it lands, laid on the surface and lifted a hair off it.
+    const normal = hit.face ? hit.face.normal.clone().transformDirection(hit.object.matrixWorld).transformDirection(inv) : localDir.clone().negate();
+    if (normal.dot(localDir) > 0) normal.negate();
+    const disc = new Mesh(
+      new CircleGeometry(o.radius * 1.08, 48),
+      new MeshBasicMaterial({ color: 0xfff3d6, transparent: true, opacity: 0.7, blending: AdditiveBlending, depthWrite: false, side: DoubleSide, toneMapped: false }),
+    );
+    disc.quaternion.setFromUnitVectors(new Vector3(0, 0, 1), normal);
+    disc.position.copy(end).addScaledVector(normal, 0.08);
+    beam.add(disc);
+    this.beam = beam;
+    this.group.add(beam);
   }
 
   /** The model or simulation, for picking up; null for an image. */
@@ -597,6 +659,7 @@ export class Exhibit {
     this.planTexture?.dispose();
     this.planTexture = null;
     this.plan = null;
+    this.beam = null;
     // The ladder freed the model's own meshes; the rest is ours.
     if (this.modelRoot) this.group.remove(this.modelRoot);
     this.group.traverse((o) => {

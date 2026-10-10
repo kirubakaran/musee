@@ -146,6 +146,7 @@ src/world/sign.ts        the entrance gateway
 scripts/fetch-assets.ts  pulls images and models from their sources into public/assets
 test/layout.test.ts      layout, branches, landmarks and hops, run with npm test
 test/sims.test.ts        every sim in the catalogue has a program; who may be picked up
+test/sky.test.ts         how a sky hint fades with distance
 scripts/dev/screenshot.mjs one bounded headless-Chrome capture, for checking renders
 scripts/dev/preview.html four fixed views of one model rung, for checking orientation and scale
 scripts/dev/bounds.ts    bounds, root transforms and texture sizes of a glTF, before it goes in
@@ -328,7 +329,14 @@ The sky can change near a work: `display.sky` with a `radius` and either
 place in that year, from the bright star catalogue, precessed to the
 date) or `sunrise` (`azimuth`, degrees clockwise from north, which is the
 way the lane runs: a sun that climbs from below the horizon to eight
-degrees and sinks again over a minute and a half). The sky is fully
+degrees and sinks again over a minute and a half) or `sun` (`azimuth`,
+`altitude`: a sun that stands still and lights the museum from there).
+With `display.oculus` (an opening's centre and radius in the work's own
+metres) a ray is cast from the opening along the sun's line to where it
+meets the model, and a shaft of light with a bright disc is drawn there:
+noon on 21 April through the Pantheon's oculus, onto the arch over the
+door. The scan's lighting is baked into its photographs, so the beam is
+drawn rather than lit. The sky is fully
 changed within the radius and back to the gallery's a fifth further out,
 and the lights dim with it. Keep the radius short of the next row.
 Stonehenge's record also sets `display.yaw` so the axis of the stones
@@ -353,7 +361,8 @@ door) is kept `standingClearance` metres clear of the row before, so a
 hop forward never lands inside the previous building.
 
 Simulations may make sounds on the spot (the Galton board ticks on the
-pegs and clicks as a ball lands) through a `Clicker` in `src/assets/sound.ts`,
+pegs and clicks as a ball lands, the Turing machine ticks at every step)
+through a `Clicker` in `src/assets/sound.ts`,
 a positional node fed short bursts of noise; nothing is downloaded.
 
 In VR a small work can be picked up: squeeze the grip or the trigger with

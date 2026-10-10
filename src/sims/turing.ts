@@ -10,6 +10,7 @@
  * Params: stepsPerSecond (default 2.5), cells (tape cells shown, default 24).
  */
 import { Group } from "three";
+import { Clicker } from "../assets/sound";
 import { Panel, INK, INK_SOFT, RULE, ACCENT, CREAM, caption, num, type Program } from "./index";
 
 type State = "seek" | "add" | "home" | "halt";
@@ -34,6 +35,12 @@ export const turing: Program = (params, bounds) => {
   const panel = new Panel(bounds.width, bounds.height, 420, 30);
   const group = new Group();
   group.add(panel.mesh);
+  // A dry tick for every step, a lower one when the head turns for home.
+  const clicker = new Clicker();
+  if (clicker.node) {
+    clicker.node.position.set(0, bounds.height * 0.5, 0);
+    group.add(clicker.node);
+  }
 
   const w = panel.w, h = panel.h;
   const tape = new Map<number, string>();
@@ -44,12 +51,14 @@ export const turing: Program = (params, bounds) => {
   let steps = 0;
   let acc = 0;
   let leftmost = 0;
+  let lastDistance = Infinity;
 
   const step = () => {
     const sym = tape.get(head) ?? " ";
     const i = RULES.findIndex((r) => r.state === state && r.read === sym);
     if (i < 0) { state = "halt"; return; }
     const r = RULES[i]!;
+    if (lastDistance < 20) clicker.click(0.12 * (1 - lastDistance / 20), r.next === "home" && state !== "home" ? 0.7 : 1.3);
     tape.set(head, r.write);
     head += r.move === "R" ? 1 : r.move === "L" ? -1 : 0;
     state = r.next;
@@ -127,6 +136,7 @@ export const turing: Program = (params, bounds) => {
   return {
     object: group,
     update(dt, distance) {
+      lastDistance = distance;
       panel.draw(dt, distance, (elapsed) => {
         acc += elapsed * rate;
         let n = Math.min(3, Math.floor(acc));
@@ -135,7 +145,10 @@ export const turing: Program = (params, bounds) => {
         paint();
       });
     },
-    dispose: () => panel.dispose(),
+    dispose() {
+      panel.dispose();
+      clicker.dispose();
+    },
     residentBytes: panel.residentBytes,
   };
 };

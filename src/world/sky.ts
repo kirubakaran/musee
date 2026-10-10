@@ -58,6 +58,8 @@ export interface SkyState {
   stars: { year: number; latitude: number; siderealHours: number } | null;
   /** How much to dim the museum's lights, 0 none, 1 fully. */
   dim: number;
+  /** Whether the museum's key light comes from the sun's direction, with this strength (0 keeps the gallery light). */
+  sunLight: number;
 }
 
 const DEG = Math.PI / 180;
@@ -116,7 +118,7 @@ export class Sky {
   private starsKey = "";
   private readonly radius: number;
   readonly sunDirection = new Vector3(0, -1, 0);
-  readonly state: SkyState = { night: 0, dawn: 0, sun: null, stars: null, dim: 0 };
+  readonly state: SkyState = { night: 0, dawn: 0, sun: null, stars: null, dim: 0, sunLight: 0 };
   /** The horizon colour right now, for the fog and the background. */
   readonly horizonNow = new Color().copy(HORIZON);
 

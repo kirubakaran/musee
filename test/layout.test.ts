@@ -208,6 +208,24 @@ describe("synthetic collections", () => {
     expect(pos.z).toBeLessThan(z("after") + 10);
   });
 
+  it("keeps the standing line of a wide print clear of the building before it", () => {
+    const model = shown.find((a) => a.kind === "model" && !a.branch)!;
+    const building = structuredClone(model);
+    building.id = "building";
+    building.date = { ...building.date, year: 1850, month: null, day: null };
+    delete building.branch;
+    (building.asset.versions[0] as { bounds: { width: number; height: number; depth: number } }).bounds = { width: 40, height: 30, depth: 44 };
+    building.display = { ...building.display, threshold: 25 };
+    // A print 14 m wide stands 8.65 m back; without clearance that line would be inside the building.
+    const print = variant(base, "print", 1860, null, 14);
+    const works = [building, print];
+    const l = computeLayout(works);
+    const stops = works.map((a) => ({ id: a.id, x: l.placements.get(a.id)!.position.x, z: l.placements.get(a.id)!.position.z, footprint: footprintOf(a) }));
+    const n = new Navigator(l, stops);
+    const back = l.placements.get("building")!.position.z - 22;
+    expect(n.standingPoint("print")!.z).toBeLessThanOrEqual(back - DEFAULT_LAYOUT.standingClearance + 1e-9);
+  });
+
   it("leaves a branch whose anchor is not shown off the floor", () => {
     const works = [...shown, variant(base, "orphan", 1990, 6, 1, { branch: { of: "nope", step: 1, label: "x" } })];
     expect(onDisplay(works).map((a) => a.id)).not.toContain("orphan");

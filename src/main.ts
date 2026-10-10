@@ -170,12 +170,12 @@ const skyWorks = visible
   .map((a) => ({ hint: a.display.sky!, centre: layout.placements.get(a.id)!.position }));
 const SUNRISE_PERIOD = 90;
 let skyClock = 30;
-const skyState: SkyState = { night: 0, dawn: 0, sun: null, stars: null, dim: 0 };
+const skyState: SkyState = { night: 0, dawn: 0, sun: null, stars: null, dim: 0, sunLight: 0 };
 function updateSky(eye: Vector3, dt: number) {
   skyClock += dt;
   // Stars and a sunrise are separate channels; each takes its nearest work, nearest relative to its radius.
   type Near = { hint: (typeof skyWorks)[number]["hint"]; w: number; r: number };
-  let stars: Near | null = null, sunrise: Near | null = null;
+  let stars: Near | null = null, sunrise: Near | null = null, standing: Near | null = null;
   for (const s of skyWorks) {
     const d = Math.hypot(s.centre.x - eye.x, s.centre.z - eye.z);
     const w = Sky.weight(s.hint, d);
@@ -183,12 +183,20 @@ function updateSky(eye: Vector3, dt: number) {
     const near = { hint: s.hint, w, r: d / s.hint.radius };
     if (s.hint.stars && (!stars || near.r < stars.r)) stars = near;
     if (s.hint.sunrise && (!sunrise || near.r < sunrise.r)) sunrise = near;
+    if (s.hint.sun && (!standing || near.r < standing.r)) standing = near;
   }
   skyState.night = 0;
   skyState.dawn = 0;
   skyState.sun = null;
   skyState.stars = null;
   skyState.dim = 0;
+  skyState.sunLight = 0;
+  if (standing) {
+    // A sun that stands still: the light comes from it, the sky barely changes.
+    skyState.sun = { ...standing.hint.sun! };
+    skyState.sunLight = standing.w;
+    skyState.dawn = standing.w * 0.12;
+  }
   if (stars) {
     skyState.night = stars.w;
     skyState.stars = stars.hint.stars!;
@@ -203,6 +211,7 @@ function updateSky(eye: Vector3, dt: number) {
     const up = Math.min(1, Math.max(0, altitude / 8));
     skyState.night = Math.max(skyState.night, sunrise.w * 0.45 * (1 - up));
     skyState.dim = Math.max(skyState.dim, sunrise.w * (0.55 - 0.4 * up));
+    skyState.sunLight = sunrise.w > 0.5 ? sunrise.w : 0;
   }
 }
 

@@ -329,6 +329,12 @@ export interface SkyHint {
   stars?: { year: number; latitude: number; siderealHours: number };
   /** A sun that rises on this bearing, degrees clockwise from north, climbs a little and sinks again, on a loop. */
   sunrise?: { azimuth: number };
+  /**
+   * A sun that stands still at this bearing and height, and lights the
+   * museum from there: noon through an oculus. Degrees clockwise from north
+   * and above the horizon.
+   */
+  sun?: { azimuth: number; altitude: number };
 }
 
 export interface DisplayHints {
@@ -383,6 +389,13 @@ export interface DisplayHints {
   reveal?: number;
   /** Written on the slab of a work with `reveal`, e.g. "Step into the Alhambra". Default "Step in". */
   invitation?: string;
+  /**
+   * An opening the standing sun (`sky.sun`) shines through: its centre in
+   * the work's own metres (base at 0, footprint centred) and its radius.
+   * A shaft of light is drawn from it to wherever the sun's line meets
+   * the work, found by casting a ray against the model.
+   */
+  oculus?: { x: number; y: number; z: number; radius: number };
 }
 
 export interface Artwork {

@@ -160,10 +160,11 @@ export function buildWorld(scene: Scene, renderer: WebGLRenderer, extent = 2000)
       hemi.intensity = 0.25 * keep;
       sun.intensity = 1.1 * keep;
       scene.environmentIntensity = 0.45 * keep;
-      // At a sunrise the museum's light comes from the sun's side and is warm.
+      // At a sunrise, or under a standing sun, the museum's light comes from the sun's side.
       sun.color.copy(sunColour).lerp(dawnColour, state.dawn);
-      if (state.sun && state.sun.altitude > 0 && state.dawn > 0.5) {
+      if (state.sun && state.sun.altitude > 0 && state.sunLight > 0) {
         offset.copy(sky.sunDirection).multiplyScalar(45).setY(Math.max(12, sky.sunDirection.y * 45));
+        sun.intensity = 1.1 * keep * (1 + 0.8 * state.sunLight);
       } else {
         offset.set(20, 40, 10);
       }

@@ -4488,7 +4488,8 @@
       "facts": [
         "The dome is still, after nineteen centuries, the world's largest made of unreinforced concrete; Brunelleschi studied it before building Florence's.",
         "The oculus is open to the weather. Rain falls on the floor, which slopes to drains, and the circle of sunlight walks across the coffers through the day.",
-        "Raphael is buried here, at his own request, with the epitaph 'Here lies Raphael, by whom Nature feared to be outdone while he lived, and when he died, feared she too would die.'"
+        "Raphael is buried here, at his own request, with the epitaph 'Here lies Raphael, by whom Nature feared to be outdone while he lived, and when he died, feared she too would die.'",
+        "At noon on 21 April, the day Rome counted as its birthday, the sun through the oculus falls on the arch over the door; the shaft of light here stands at that hour."
       ],
       "wikipediaUrl": "https://en.wikipedia.org/wiki/Pantheon,_Rome",
       "wikidataQid": "Q99309",
@@ -4585,7 +4586,20 @@
         "back": "mirror",
         "yaw": null,
         "fallbackWidthM": 1.2,
-        "threshold": 25
+        "threshold": 25,
+        "sky": {
+          "radius": 40,
+          "sun": {
+            "azimuth": 0,
+            "altitude": 60
+          }
+        },
+        "oculus": {
+          "x": 0,
+          "y": 34,
+          "z": 0,
+          "radius": 4.4
+        }
       },
       "tags": [
         "architecture",
