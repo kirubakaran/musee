@@ -65,8 +65,12 @@ you step on, since the scan is worth seeing only from
 inside. The pages hang several times life size, and say
 so on their placards: the idea is the work, not the paper. The sky changes near two
 works: at the Nebra disc it is the night of 1600 BCE over the find-spot,
-with the Pleiades low in the west, and at Stonehenge the sun rises on the
-solstice bearing, along the axis of the stones, over and over.
+with the Pleiades low in the west and the Milky Way across the north
+(laid in by hand along the galactic plane, since the catalogue stops at
+the naked-eye stars), at Stonehenge the sun rises on the solstice
+bearing, along the axis of the stones, over and over, and in the
+Pantheon it is noon on 21 April, the sun through the oculus on the arch
+over the door.
 
 ## Run it
 
@@ -143,10 +147,12 @@ src/locomotion/resume.ts remembers your place in the browser and restores it
 src/locomotion/navigate.ts hops between eras and cells, and jumps to a work
 src/locomotion/grab.ts   VR: pick a small work up and turn it in your hand
 src/world/sign.ts        the entrance gateway
+src/world/tour.ts        the guided first visit: a path of stops with a line about each
 scripts/fetch-assets.ts  pulls images and models from their sources into public/assets
 test/layout.test.ts      layout, branches, landmarks and hops, run with npm test
 test/sims.test.ts        every sim in the catalogue has a program; who may be picked up
 test/sky.test.ts         how a sky hint fades with distance
+test/tour.test.ts        the tour names shown works, once each, forward in time
 scripts/dev/screenshot.mjs one bounded headless-Chrome capture, for checking renders
 scripts/dev/preview.html four fixed views of one model rung, for checking orientation and scale
 scripts/dev/bounds.ts    bounds, root transforms and texture sizes of a glTF, before it goes in
@@ -364,6 +370,13 @@ Simulations may make sounds on the spot (the Galton board ticks on the
 pegs and clicks as a ball lands, the Turing machine ticks at every step)
 through a `Clicker` in `src/assets/sound.ts`,
 a positional node fed short bursts of noise; nothing is downloaded.
+
+The guided visit (`src/world/tour.ts`) is a list of stops with one line
+each, for a first visitor. `T` goes to the next stop and says its line at
+the top of the screen, `Shift T` goes back, a phone has tour buttons, and
+`?tour` starts at the first stop. Where you are in it is remembered in
+the browser. Stops are works by id, in time order, and a work that is
+not on display is skipped. Not yet bound to a VR button.
 
 In VR a small work can be picked up: squeeze the grip or the trigger with
 a hand near it and it follows the hand; let go and it drifts home.

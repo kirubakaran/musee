@@ -17,6 +17,12 @@
  * degree. Then the local sky for the latitude and sidereal time, the
  * usual way. Nothing here is precise to the eye's width; it is the right
  * sky, not a planetarium.
+ *
+ * The Milky Way is not in the catalogue, which stops at the naked-eye
+ * stars, so its band is laid in as a few thousand faint points scattered
+ * along the galactic equator, denser toward the centre in Sagittarius and
+ * thinner toward the anticentre, and carried through the same sky as the
+ * stars. It is the right place and the right shape; the detail is made up.
  */
 import {
   AdditiveBlending,
@@ -63,6 +69,35 @@ export interface SkyState {
 }
 
 const DEG = Math.PI / 180;
+
+/** Galactic longitude and latitude (degrees) to J2000 right ascension and declination, degrees. */
+function galacticToEquatorial(l: number, b: number): [number, number] {
+  const lr = l * DEG, br = b * DEG;
+  const x = Math.cos(br) * Math.cos(lr), y = Math.cos(br) * Math.sin(lr), z = Math.sin(br);
+  // Galactic to equatorial rotation matrix (J2000), rows are RA/Dec basis.
+  const ex = -0.0548755604 * x + 0.4941094279 * y - 0.8676661490 * z;
+  const ey = -0.8734370902 * x - 0.4448296300 * y - 0.1980763734 * z;
+  const ez = -0.4838350155 * x + 0.7469822445 * y + 0.4559837762 * z;
+  return [((Math.atan2(ey, ex) / DEG) + 360) % 360, Math.asin(ez) / DEG];
+}
+
+/** A made-up but well-placed Milky Way: faint points along the galactic plane, as [ra, dec, mag, bv]. */
+function milkyWay(count: number): [number, number, number, number][] {
+  let seed = 977;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  const gauss = () => Math.sqrt(-2 * Math.log(1 - rnd())) * Math.cos(2 * Math.PI * rnd());
+  const out: [number, number, number, number][] = [];
+  for (let i = 0; i < count; i++) {
+    // Longitude weighted toward the centre (l = 0) where the band is bright and wide.
+    const l = (gauss() * 70 + 360 * 2) % 360;
+    const toward = 0.5 + 0.5 * Math.cos(l * DEG);
+    const b = gauss() * (4 + 6 * toward);
+    const [ra, dec] = galacticToEquatorial(l, b);
+    // Faint, between 5th and 7th magnitude, a touch fainter away from the centre.
+    out.push([ra, dec, 5.4 + rnd() * 1.6 + (1 - toward) * 0.5, 0.6]);
+  }
+  return out;
+}
 
 /** Catalogue J2000 right ascension and declination to a unit vector in the local sky: x east, y up, z south (so -z north). */
 function localDirection(raDeg: number, decDeg: number, year: number, latitude: number, siderealHours: number, out: Vector3): Vector3 {
@@ -222,11 +257,12 @@ export class Sky {
     this.starsKey = key;
     const cat = await this.loadCatalogue();
     if (!cat || key !== this.starsKey) return;
-    const n = cat.stars.length;
+    const all = [...cat.stars, ...milkyWay(4000)];
+    const n = all.length;
     const pos = new Float32Array(n * 3), size = new Float32Array(n), tints = new Float32Array(n * 3);
     const v = new Vector3(), c = new Color();
     const r = this.radius * 0.96;
-    cat.stars.forEach(([ra, dec, mag, bv], i) => {
+    all.forEach(([ra, dec, mag, bv], i) => {
       localDirection(ra, dec, cfg.year, cfg.latitude, cfg.siderealHours, v).multiplyScalar(r).toArray(pos, i * 3);
       // Brightness as apparent size: first magnitude about 9 px, the faintest 2.
       size[i] = Math.max(1.6, 9 * Math.pow(10, -0.16 * (mag + 1.2)));

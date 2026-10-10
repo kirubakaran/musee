@@ -13,6 +13,7 @@ import { Navigator } from "./locomotion/navigate";
 import { Grabber } from "./locomotion/grab";
 import { buildEntrance, GATE_HALF_WIDTH, GATE_HEIGHT } from "./world/sign";
 import { hasTouch, setupTouch } from "./locomotion/touch";
+import { Tour } from "./world/tour";
 import { setAudioListener } from "./assets/sound";
 import { baseHeightOf, footprintOf, onDisplay } from "./data/types";
 import { Sky, type SkyState } from "./world/sky";
@@ -108,8 +109,11 @@ function entranceDistance(): number {
 }
 const goToEntrance = () => entrance && player.teleport(entrance.x, entrance.z + ENTRANCE_SETBACK + entranceDistance(), 0);
 
+const tour = new Tour(visible, (id) => nav.goTo(player, id), document.getElementById("tour"));
 const act = (a: Action) => {
-  if (a === "eraNext") nav.hopEra(player, 1);
+  if (a === "tourNext") tour.step(1);
+  else if (a === "tourPrev") tour.step(-1);
+  else if (a === "eraNext") nav.hopEra(player, 1);
   else if (a === "eraPrev") nav.hopEra(player, -1);
   else if (a === "east") nav.hopGeo(player, 1);
   else if (a === "west") nav.hopGeo(player, -1);
@@ -125,6 +129,7 @@ const grabber = new Grabber(renderer, player, (x, z, r) => streamer.exhibitsWith
 //   ?spawn=x,z,yawDegrees   anywhere, for debugging
 //   ?spawn=start            the entrance, forgetting the saved place
 //   ?at=<id> | <year> | newest   in front of that work
+//   ?tour                   the first stop of the guided visit
 //   the saved place from last time, else the entrance.
 const spawnParam = params.get("spawn");
 const atParam = params.get("at");
@@ -132,6 +137,8 @@ if (spawnParam === "start") clearPlace();
 if (spawnParam && spawnParam !== "start") {
   const [x = 0, z = 0, yawDeg = 0] = spawnParam.split(",").map(Number);
   player.spawn(x, z, (yawDeg * Math.PI) / 180);
+} else if (params.has("tour")) {
+  tour.start();
 } else if (atParam && nav.goTo(player, resolveAt(atParam))) {
   // placed in front of the requested work
 } else if (!restorePlace(player, stops) && entrance) {

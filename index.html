@@ -60,6 +60,16 @@
       #hops button:active { background: rgba(58,56,50,0.15); }
       #hops button small { display: block; font-size: 9px; color: #8a857c; margin-top: 3px; }
       #hops .wide { grid-column: span 2; }
+      /* The guided visit: a line about the stop you were just taken to, top centre, gone after a while. */
+      #tour {
+        position: fixed; left: 50%; top: max(14px, env(safe-area-inset-top)); transform: translateX(-50%); z-index: 6;
+        max-width: min(560px, calc(100vw - 32px)); padding: 10px 16px; border-radius: 10px;
+        font: 14px/1.5 system-ui, sans-serif; color: #2a2824; background: rgba(255,255,255,0.86);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.12); pointer-events: none; opacity: 0; transition: opacity 0.4s;
+      }
+      #tour.on { opacity: 1; }
+      #tour .n { color: #8a857c; margin-right: 8px; }
+      #tour .next { display: block; color: #8a857c; font-size: 12px; margin-top: 3px; }
       #hud kbd {
         display: inline-block; font: 11.5px/1 ui-monospace, Menlo, monospace;
         padding: 3px 5px 2px; border-radius: 4px; vertical-align: 1px;
@@ -78,8 +88,10 @@
         <span class="lead">Look</span><span>click, then move the mouse · <span class="nw"><kbd>Esc</kbd> releases it</span></span>
         <span class="lead">Walk</span><span><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> · <span class="nw">hold <kbd>Shift</kbd> to run</span></span>
         <span class="lead">Hop</span><span><span class="nw"><kbd>[</kbd> <kbd>]</kbd> era back / forward</span> · <span class="nw"><kbd>,</kbd> <kbd>.</kbd> sideways</span></span>
+        <span class="lead">Tour</span><span><kbd>T</kbd> next stop · <span class="nw"><kbd>Shift</kbd> <kbd>T</kbd> back</span></span>
       </div>
     </div>
+    <div id="tour" aria-live="polite"></div>
     <div id="touch">
       <div id="stick"><div class="knob"></div></div>
       <div id="hops">
@@ -89,6 +101,8 @@
         <button data-action="end">⇥<small>end</small></button>
         <button class="wide" data-action="west">◁<small>side</small></button>
         <button class="wide" data-action="east">▷<small>side</small></button>
+        <button class="wide" data-action="tourPrev">◀<small>tour</small></button>
+        <button class="wide" data-action="tourNext">▶<small>tour</small></button>
       </div>
     </div>
     <script type="module" src="/src/main.ts"></script>
