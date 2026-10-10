@@ -47,8 +47,9 @@ downloaded but computed while you watch: the Game of Life on a slab in the
 floor, the Mandelbrot set zooming on the GPU, the Lorenz attractor as a
 tube you walk around with a point flying the equations live, Fourier's
 epicycles drawing a square wave, a Galton board filling in the bell curve,
-a Turing machine counting in binary, and the Great Pyramid of Giza as a
-plain shape at its true 146 m, standing 600 m east of the lane where the
+a Turing machine counting in binary, and the Great Pyramid of Giza at
+its true 146 m, built as a stair of 210 stone courses from its published
+figures, standing 600 m east of the lane where the
 floor points to it, to be seen on the horizon and walked to. Four early
 films play as you approach: Muybridge's galloping horse, the Lumière
 train, Méliès's trip to the Moon and the Apollo 11 broadcast. Five pages
@@ -319,7 +320,8 @@ row of its year but stands that far out to the side, left out of the
 row's depth and of the streaming, built once at the start so it shows on
 the horizon through its own longer haze. The floor at its row carries a
 pointer with its name and distance; a sideways hop from that row goes
-out to its foot, and the next hop back returns to the lane.
+out to stand before it, far enough back to see the whole of it, and the
+next hop back returns to the lane.
 
 The sky can change near a work: `display.sky` with a `radius` and either
 `stars` (`year`, `latitude`, `siderealHours`: the night sky over that

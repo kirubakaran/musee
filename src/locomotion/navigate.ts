@@ -89,9 +89,13 @@ export class Navigator {
     return true;
   }
 
-  /** Where a visitor stands to look at a cell: on the row's line, or at a landmark's foot. */
+  /**
+   * Where a visitor stands to look at a cell: on the row's line, or before
+   * a landmark, far enough back to see the whole of it rather than a wall;
+   * they can walk the rest of the way.
+   */
   private standingAt(row: Row, cell: LayoutCell): { x: number; z: number } {
-    return { x: cell.x, z: cell.landmark ? cell.z + standoff(cell) : row.frontZ };
+    return { x: cell.x, z: cell.landmark ? cell.z + cell.depth / 2 + Math.max(10, cell.height * 0.8) : row.frontZ };
   }
 
   /** Next cell east (dir 1, +X) or west (dir -1) in the row you are at: the row with the nearest standing point. */

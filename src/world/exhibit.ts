@@ -368,9 +368,11 @@ export class Exhibit {
     tex.colorSpace = SRGBColorSpace;
     tex.anisotropy = 8;
     this.planTexture = tex;
-    const slab = new Mesh(new PlaneGeometry(w, d), new MeshBasicMaterial({ map: tex, toneMapped: false }));
+    // Lit like the floor around it, so it reads as paving with a drawing on it, not a light box.
+    const slab = new Mesh(new PlaneGeometry(w, d), new MeshStandardMaterial({ map: tex, roughness: 0.92, metalness: 0 }));
     slab.rotation.x = -Math.PI / 2;
     slab.position.y = baseHeightOf(this.artwork) + 0.012;
+    slab.receiveShadow = true;
     slab.name = "reveal-floor";
     this.group.add(slab);
   }
@@ -386,11 +388,11 @@ export class Exhibit {
     const { canvas, w, d } = this.plan;
     const ctx = canvas.getContext("2d")!;
     const W = canvas.width, H = canvas.height;
-    // The museum's own sheet: cream, ink lines, like the equation pages.
-    ctx.fillStyle = "#f3eee3";
+    // The museum's own sheet, a shade toward stone so it sits under the lights like the floor.
+    ctx.fillStyle = "#d9d0bd";
     ctx.fillRect(0, 0, W, H);
     // A metre grid, faint.
-    ctx.strokeStyle = "rgba(42,40,36,0.10)";
+    ctx.strokeStyle = "rgba(42,40,36,0.12)";
     ctx.lineWidth = 1;
     ctx.beginPath();
     for (let x = 0; x <= w; x += 1) { const px = (x / w) * W; ctx.moveTo(px, 0); ctx.lineTo(px, H); }
@@ -401,7 +403,7 @@ export class Exhibit {
       const base = this.group.position.y + baseHeightOf(this.artwork);
       const lo = base + 0.5, hi = base + 2.6;
       const v = new Vector3();
-      ctx.fillStyle = "rgba(42,40,36,0.30)";
+      ctx.fillStyle = "rgba(42,40,36,0.34)";
       root.traverse((o) => {
         if (!(o instanceof Mesh) || o.name === "backing") return;
         const pos = o.geometry.attributes.position;
