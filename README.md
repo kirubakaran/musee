@@ -58,9 +58,10 @@ first page of Einstein's 1905 relativity paper. Space Shuttle Discovery
 stands on her gear as the Smithsonian's CC0 scan, 37 m long; Khufu's
 ship, the 4,500-year-old cedar boat from beside the Great Pyramid, lies
 broadside to the lane as a laser scan drawn from 1.6 million coloured
-points; and a courtyard of the Alhambra waits as a plaster slab on the
-floor whose walls rise as you step onto it, since the scan is worth
-seeing only from inside. The pages hang several times life size, and say
+points; and a courtyard of the Alhambra waits as a floor plan on a cream
+sheet, drawn from the scan itself, and the walls grow up out of it as
+you step on, since the scan is worth seeing only from
+inside. The pages hang several times life size, and say
 so on their placards: the idea is the work, not the paper. The sky changes near two
 works: at the Nebra disc it is the night of 1600 BCE over the find-spot,
 with the Pleiades low in the west, and at Stonehenge the sun rises on the
@@ -332,11 +333,14 @@ Stonehenge's record also sets `display.yaw` so the axis of the stones
 lies on the solstice bearing.
 
 A scanned interior whose outside is not worth seeing gets
-`display.reveal`: metres from its centre within which it is drawn at all.
-Beyond that only its floor shows, a plaster slab the size of its
-footprint with "walk in" at the near edge, and the walls rise over half a
-second as the visitor steps onto it. Give it `threshold: 0` so the hops
-land in the middle of it. `display.back: "backing"` on any model skins
+`display.reveal`: metres from its centre within which its walls stand.
+From further away it is cut off at the floor by a clipping plane, and
+what shows is a plan: a slab the size of its footprint, ink on the same
+cream sheet the equations are set on, with a metre grid and the walls
+drawn from the scan's own vertices between knee and head height, the title at the far edge and
+`display.invitation` ("Step into the Alhambra") at the near one. Step
+onto it and the walls grow up out of the plan over a second and a half.
+Give it `threshold: 0` so the hops land in the middle of it. `display.back: "backing"` on any model skins
 its outside in plain plaster, for a scan whose inside textures would read
 as broken glass seen reversed; `"mirror"` draws both sides as they are,
 which suits a rotunda.

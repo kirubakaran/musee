@@ -375,11 +375,14 @@ export interface DisplayHints {
   sky?: SkyHint;
   /**
    * A scanned interior that is only shown from inside: until the visitor
-   * is within this many metres of its centre, only its floor is drawn, a
-   * slab on the museum floor with "walk in" on it, and the walls rise as
-   * they step onto it. For a scan whose outside is not worth seeing.
+   * is within this many metres of its centre, it is cut off at ankle
+   * height, so the lane sees its floor and the bases of its walls, a plan
+   * in stone on a plaster slab, and the walls rise out of it as they
+   * step in. For a scan whose outside is not worth seeing.
    */
   reveal?: number;
+  /** Written on the slab of a work with `reveal`, e.g. "Step into the Alhambra". Default "Step in". */
+  invitation?: string;
 }
 
 export interface Artwork {

@@ -6786,7 +6786,8 @@
         "yaw": null,
         "fallbackWidthM": 1.2,
         "threshold": 0,
-        "reveal": 11
+        "reveal": 11,
+        "invitation": "Step into the Alhambra"
       },
       "tags": [
         "architecture",

@@ -9,7 +9,6 @@
 import {
   BackSide,
   Box3,
-  BoxGeometry,
   CanvasTexture,
   CircleGeometry,
   DoubleSide,
@@ -18,7 +17,9 @@ import {
   Mesh,
   MeshBasicMaterial,
   MeshStandardMaterial,
+  Plane,
   PlaneGeometry,
+  SRGBColorSpace,
   Vector3,
   type Texture,
 } from "three";
@@ -174,9 +175,13 @@ export class Exhibit {
   private sound: Sound | null = null;
   private sim: Sim | null = null;
   private modelRoot: Group | null = null;
-  /** Shown from inside only: how far the walls have risen, 0 hidden to 1 solid. */
+  /** Shown from inside only: how far the walls have risen, 0 cut at the ankle to 1 whole. */
   private revealT = 0;
   private revealMaterials: Material[] = [];
+  /** Keeps everything below its height; raised to let the walls up. */
+  private readonly revealPlane = new Plane(new Vector3(0, -1, 0), 0);
+  private plan: { canvas: HTMLCanvasElement; w: number; d: number } | null = null;
+  private planTexture: CanvasTexture | null = null;
   /** In a visitor's hand: a sharper rung that arrives meanwhile waits until it is put down. */
   private held = false;
   private pendingRoot: Group | null = null;
@@ -322,6 +327,7 @@ export class Exhibit {
       this.prepareRoot(root);
       this.modelRoot = root;
       this.group.add(root);
+      this.rootAdded(root);
     });
     ladder.requestLowest();
     this.ladder = ladder;
@@ -352,42 +358,93 @@ export class Exhibit {
    * knows to step onto it. The walls rise once they do.
    */
   private buildRevealFloor(width: number, depth: number) {
-    const slab = new Mesh(new BoxGeometry(width, 0.04, depth), new MeshStandardMaterial({ color: 0xd9c9a8, roughness: 0.95 }));
-    slab.position.y = baseHeightOf(this.artwork) + 0.02;
-    slab.receiveShadow = true;
+    const w = width + 2, d = depth + 2;
+    const canvas = document.createElement("canvas");
+    canvas.width = 1024;
+    canvas.height = Math.round((1024 * d) / w);
+    this.plan = { canvas, w, d };
+    this.drawPlan(null);
+    const tex = new CanvasTexture(canvas);
+    tex.colorSpace = SRGBColorSpace;
+    tex.anisotropy = 8;
+    this.planTexture = tex;
+    const slab = new Mesh(new PlaneGeometry(w, d), new MeshBasicMaterial({ map: tex, toneMapped: false }));
+    slab.rotation.x = -Math.PI / 2;
+    slab.position.y = baseHeightOf(this.artwork) + 0.012;
     slab.name = "reveal-floor";
     this.group.add(slab);
-    const t = new Text();
-    t.text = "walk in";
-    t.font = FONT_BOLD;
-    t.fontSize = 0.4;
-    t.color = 0x5e584e;
-    t.fillOpacity = 0.6;
-    t.anchorX = "center";
-    t.anchorY = "bottom";
-    t.rotation.x = -Math.PI / 2;
-    t.position.set(0, baseHeightOf(this.artwork) + 0.045, depth / 2 - 0.4);
-    t.sync();
-    this.group.add(t);
   }
 
-  /** Walls shown from inside only: hidden, rising, or solid, by how far in the visitor stands. */
+  /**
+   * The plan on the slab: the scan's vertices between knee and head
+   * height, dropped onto the floor as ink dots on the museum's cream
+   * sheet, so the walls draw their own floor plan; with the invitation at
+   * the near edge. Redrawn from each sharper rung as it arrives.
+   */
+  private drawPlan(root: Group | null) {
+    if (!this.plan) return;
+    const { canvas, w, d } = this.plan;
+    const ctx = canvas.getContext("2d")!;
+    const W = canvas.width, H = canvas.height;
+    // The museum's own sheet: cream, ink lines, like the equation pages.
+    ctx.fillStyle = "#f3eee3";
+    ctx.fillRect(0, 0, W, H);
+    // A metre grid, faint.
+    ctx.strokeStyle = "rgba(42,40,36,0.10)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let x = 0; x <= w; x += 1) { const px = (x / w) * W; ctx.moveTo(px, 0); ctx.lineTo(px, H); }
+    for (let z = 0; z <= d; z += 1) { const pz = (z / d) * H; ctx.moveTo(0, pz); ctx.lineTo(W, pz); }
+    ctx.stroke();
+    if (root) {
+      root.updateMatrixWorld(true);
+      const base = this.group.position.y + baseHeightOf(this.artwork);
+      const lo = base + 0.5, hi = base + 2.6;
+      const v = new Vector3();
+      ctx.fillStyle = "rgba(42,40,36,0.30)";
+      root.traverse((o) => {
+        if (!(o instanceof Mesh) || o.name === "backing") return;
+        const pos = o.geometry.attributes.position;
+        if (!pos) return;
+        const step = Math.max(1, Math.floor(pos.count / 400000));
+        for (let i = 0; i < pos.count; i += step) {
+          v.fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld);
+          if (v.y < lo || v.y > hi) continue;
+          // Into the slab's own frame: x east, z toward the visitor (down the canvas).
+          const lx = v.x - this.group.position.x, lz = v.z - this.group.position.z;
+          const px = ((lx + w / 2) / w) * W, pz = ((lz + d / 2) / d) * H;
+          ctx.fillRect(px - 1, pz - 1, 2, 2);
+        }
+      });
+    }
+    ctx.fillStyle = "rgba(42,40,36,0.85)";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "bottom";
+    ctx.font = `600 ${Math.round(W * 0.045)}px system-ui, sans-serif`;
+    ctx.fillText(this.artwork.display.invitation ?? "Step in", W / 2, H - H * 0.02);
+    ctx.font = `${Math.round(W * 0.022)}px system-ui, sans-serif`;
+    ctx.textBaseline = "top";
+    ctx.fillStyle = "rgba(42,40,36,0.55)";
+    ctx.fillText(this.artwork.title, W / 2, H * 0.02);
+    if (this.planTexture) this.planTexture.needsUpdate = true;
+  }
+
+  /** The height everything of a revealed work is cut at: the floor from the lane, the sky from inside. */
+  private applyRevealCut() {
+    const fp = this.footprint;
+    const k = 1 - (1 - this.revealT) * (1 - this.revealT);
+    const cut = (fp.height + 1) * k;
+    this.revealPlane.constant = this.group.position.y + baseHeightOf(this.artwork) + cut;
+  }
+
+  /** Walls shown from inside only: cut at the ankle, rising, or whole, by how far in the visitor stands. */
   private updateReveal(d: number, dt: number) {
     const reveal = this.artwork.display.reveal;
     if (reveal == null || !this.modelRoot) return;
     const want = d < reveal ? 1 : 0;
     const before = this.revealT;
-    this.revealT = Math.max(0, Math.min(1, this.revealT + (want > this.revealT ? dt : -dt) / 0.6));
-    if (this.revealT === before && (this.revealT === 0 || this.revealT === 1)) {
-      this.modelRoot.visible = this.revealT > 0;
-      return;
-    }
-    this.modelRoot.visible = this.revealT > 0;
-    for (const m of this.revealMaterials) {
-      m.transparent = this.revealT < 1;
-      m.opacity = this.revealT;
-      m.depthWrite = this.revealT >= 0.5;
-    }
+    this.revealT = Math.max(0, Math.min(1, this.revealT + (want > this.revealT ? dt : -dt) / 1.4));
+    if (this.revealT !== before) this.applyRevealCut();
   }
 
   /**
@@ -403,7 +460,12 @@ export class Exhibit {
     root.traverse((o) => o instanceof Mesh && meshes.push(o));
     this.revealMaterials = [];
     for (const o of meshes) {
-      if (this.artwork.display.reveal != null) this.revealMaterials.push(...(Array.isArray(o.material) ? o.material : [o.material]));
+      if (this.artwork.display.reveal != null) {
+        for (const m of Array.isArray(o.material) ? o.material : [o.material]) {
+          m.clippingPlanes = [this.revealPlane];
+          this.revealMaterials.push(m);
+        }
+      }
       o.castShadow = true;
       if (back === "mirror") for (const m of Array.isArray(o.material) ? o.material : [o.material]) m.side = DoubleSide;
       if (back === "backing") {
@@ -413,11 +475,20 @@ export class Exhibit {
         skin.castShadow = true;
         skin.name = "backing";
         o.add(skin);
-        if (this.artwork.display.reveal != null) this.revealMaterials.push(skin.material as Material);
+        if (this.artwork.display.reveal != null) {
+          (skin.material as Material).clippingPlanes = [this.revealPlane];
+          this.revealMaterials.push(skin.material as Material);
+        }
       }
     }
-    // Hidden until the visitor is inside; the first update decides.
-    if (this.artwork.display.reveal != null) root.visible = this.revealT > 0;
+    if (this.artwork.display.reveal != null) this.applyRevealCut();
+  }
+
+  /** After a root is in the scene: the blueprint needs world positions. */
+  private rootAdded(root: Group) {
+    if (this.artwork.display.reveal == null) return;
+    this.group.updateMatrixWorld(true);
+    this.drawPlan(root);
   }
 
   /** The model or simulation, for picking up; null for an image. */
@@ -443,6 +514,7 @@ export class Exhibit {
       this.prepareRoot(root);
       this.modelRoot = root;
       this.group.add(root);
+      this.rootAdded(root);
     }
   }
 
@@ -520,6 +592,9 @@ export class Exhibit {
     this.motion = null;
     this.sim?.dispose();
     this.sim = null;
+    this.planTexture?.dispose();
+    this.planTexture = null;
+    this.plan = null;
     // The ladder freed the model's own meshes; the rest is ours.
     if (this.modelRoot) this.group.remove(this.modelRoot);
     this.group.traverse((o) => {

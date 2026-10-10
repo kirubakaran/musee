@@ -31,6 +31,8 @@ renderer.shadowMap.type = PCFShadowMap;
 renderer.toneMapping = ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.0;
 renderer.xr.enabled = true;
+// Works shown from inside only are cut off at the ankle from the lane; the cut is a clipping plane on their materials.
+renderer.localClippingEnabled = true;
 renderer.xr.setReferenceSpaceType("local-floor");
 document.body.appendChild(renderer.domElement);
 // The button says "VR not supported" wherever there is no WebXR at all; on a phone that is just clutter.
