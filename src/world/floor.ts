@@ -147,6 +147,9 @@ export function buildWorld(scene: Scene, renderer: WebGLRenderer, extent = 2000)
   const offset = new Vector3(20, 40, 10);
   const sunColour = new Color(0xfff4e6);
   const dawnColour = new Color(0xffc48a);
+  const floorDay = new Color(0xffffff);
+  const floorNight = new Color(0x2a2d33);
+  const floorMaterial = floor.material as MeshStandardMaterial;
 
   return {
     floor,
@@ -157,6 +160,8 @@ export function buildWorld(scene: Scene, renderer: WebGLRenderer, extent = 2000)
       background.copy(sky.horizonNow);
       // Lights go down with the sky, never out: the floor must stay walkable.
       const keep = 1 - 0.82 * state.dim;
+      // Under stars the ground goes near black, so the lane reads as a dark plain and not a lit floor.
+      floorMaterial.color.copy(floorDay).lerp(floorNight, state.night);
       hemi.intensity = 0.25 * keep;
       sun.intensity = 1.1 * keep;
       scene.environmentIntensity = 0.45 * keep;

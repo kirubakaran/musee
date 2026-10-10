@@ -20,6 +20,7 @@ import { fourier } from "./fourier";
 import { galton } from "./galton";
 import { turing } from "./turing";
 import { pyramid } from "./pyramid";
+import { moon } from "./moon";
 
 export type Params = Record<string, number | string | boolean>;
 export interface Bounds {
@@ -39,7 +40,7 @@ export interface Sim {
 
 export type Program = (params: Params, bounds: Bounds) => Sim;
 
-export const PROGRAMS: Record<string, Program> = { life, mandelbrot, lorenz, fourier, galton, turing, pyramid };
+export const PROGRAMS: Record<string, Program> = { life, mandelbrot, lorenz, fourier, galton, turing, pyramid, moon };
 
 export const CREAM = "#f3eee3";
 export const INK = "#2a2824";

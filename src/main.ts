@@ -6,7 +6,7 @@ import { computeLayout, DEFAULT_LAYOUT, WORLD_LAYOUT } from "./layout/layout";
 import { buildWorld } from "./world/floor";
 import { DEFAULT_STREAM, Streamer } from "./world/stream";
 import { Exhibit } from "./world/exhibit";
-import { buildAxisCues } from "./world/axes";
+import { buildAxisCues, setAxesNight } from "./world/axes";
 import { Player, type Action } from "./locomotion/player";
 import { clearPlace, restorePlace, trackPlace } from "./locomotion/resume";
 import { Navigator } from "./locomotion/navigate";
@@ -77,7 +77,8 @@ const landmarks = visible.filter((a) => a.landmark).map((a) => {
   scene.add(e.group);
   return e;
 });
-scene.add(buildAxisCues(layout, layoutCfg));
+const axisCues = buildAxisCues(layout, layoutCfg);
+scene.add(axisCues);
 
 // Hops between eras and cells, and jumps to a work.
 const stops = visible.map((a) => {
@@ -177,7 +178,7 @@ const skyWorks = visible
   .map((a) => ({ hint: a.display.sky!, centre: layout.placements.get(a.id)!.position }));
 const SUNRISE_PERIOD = 90;
 let skyClock = 30;
-const skyState: SkyState = { night: 0, dawn: 0, sun: null, stars: null, dim: 0, sunLight: 0 };
+const skyState: SkyState = { night: 0, dawn: 0, sun: null, stars: null, moon: null, dim: 0, sunLight: 0 };
 function updateSky(eye: Vector3, dt: number) {
   skyClock += dt;
   // Stars and a sunrise are separate channels; each takes its nearest work, nearest relative to its radius.
@@ -196,6 +197,7 @@ function updateSky(eye: Vector3, dt: number) {
   skyState.dawn = 0;
   skyState.sun = null;
   skyState.stars = null;
+  skyState.moon = null;
   skyState.dim = 0;
   skyState.sunLight = 0;
   if (standing) {
@@ -207,6 +209,7 @@ function updateSky(eye: Vector3, dt: number) {
   if (stars) {
     skyState.night = stars.w;
     skyState.stars = stars.hint.stars!;
+    skyState.moon = stars.hint.moon ?? null;
     skyState.dim = stars.w;
   }
   if (sunrise) {
@@ -244,8 +247,11 @@ renderer.setAnimationLoop((time) => {
   updateSky(eye, dt);
   world.setSky(skyState);
   streamer.update(eye, dt);
+  streamer.setNight(skyState.night);
+  setAxesNight(axisCues, skyState.night);
   for (const e of landmarks) {
     e.update(eye, dt);
+    e.setNight(skyState.night);
     e.setPlacards(eye.distanceTo(e.worldCentre) < DEFAULT_STREAM.placardRadius + footprintOf(e.artwork).depth / 2);
   }
   renderer.render(scene, camera);

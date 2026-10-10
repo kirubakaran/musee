@@ -335,6 +335,13 @@ export interface SkyHint {
    * and above the horizon.
    */
   sun?: { azimuth: number; altitude: number };
+  /**
+   * The Moon in the night sky (needs `stars` for the night): where it
+   * hangs, how wide it looks in degrees (the real Moon is 0.52; a few
+   * degrees lets it be admired), and where the sun is, which sets its
+   * phase: the lit side faces the sun, which may be below the horizon.
+   */
+  moon?: { azimuth: number; altitude: number; size: number; sun: { azimuth: number; altitude: number } };
 }
 
 export interface DisplayHints {

@@ -95,6 +95,11 @@ export class Streamer {
     return b;
   }
 
+  /** Tell every live exhibit how dark the sky is, so placards stay legible. */
+  setNight(night: number) {
+    for (const s of this.live) s.exhibit!.setNight(night);
+  }
+
   /** Live exhibits whose place is within `radius` of a floor point. */
   exhibitsWithin(x: number, z: number, radius: number): Exhibit[] {
     const out: Exhibit[] = [];

@@ -9,6 +9,7 @@
 import {
   AdditiveBlending,
   BackSide,
+  Color,
   Box3,
   CanvasTexture,
   CylinderGeometry,
@@ -40,6 +41,10 @@ import type { Placement } from "../layout/layout";
 
 const FONT_REGULAR = "/fonts/inter-400.woff";
 const FONT_BOLD = "/fonts/inter-600.woff";
+/** Placard ink by day and under a night sky, where dark ink on a dark floor would vanish. */
+const INK_DAY = new Color(0x2a2824), INK_NIGHT = new Color(0xf3eee3);
+const BODY_DAY = new Color(0x4a4740), BODY_NIGHT = new Color(0xd9d3c6);
+const tmpColour = new Color();
 
 /** Screen pixels a 1 m object at 1 m should get before we ask for a sharper rung. */
 const PX_PER_RADIAN = 1600;
@@ -199,6 +204,7 @@ export class Exhibit {
   /** Highest quality this exhibit may ask for; lowered by shrink(), lifted by uncap(). */
   private qualityCap = Infinity;
   private placards: Group[] = [];
+  private night = 0;
   private readonly footprint;
 
   constructor(
@@ -235,6 +241,19 @@ export class Exhibit {
     return this.placards.length > 0;
   }
 
+  /** How dark the sky is, 0 to 1: the placards' ink goes pale with it. */
+  setNight(night: number) {
+    if (night === this.night) return;
+    this.night = night;
+    for (const p of this.placards) {
+      p.traverse((o) => {
+        if (!(o instanceof Text)) return;
+        const title = o.font === FONT_BOLD;
+        o.color = tmpColour.copy(title ? INK_DAY : BODY_DAY).lerp(title ? INK_NIGHT : BODY_NIGHT, night).getHex();
+      });
+    }
+  }
+
   /**
    * Placards: one in front, one behind, each single-sided so you only ever
    * read the one facing you, on your left either way. A work hung at
@@ -267,6 +286,9 @@ export class Exhibit {
     back.rotation.y = Math.PI;
     this.placards = [front, back];
     for (const p of this.placards) this.group.add(p);
+    const n = this.night;
+    this.night = -1;
+    this.setNight(n);
   }
 
   private buildImage() {

@@ -27,6 +27,9 @@
 import {
   AdditiveBlending,
   BackSide,
+  SphereGeometry as MoonGeometry,
+  SRGBColorSpace,
+  TextureLoader,
   BufferAttribute,
   BufferGeometry,
   CanvasTexture,
@@ -62,6 +65,8 @@ export interface SkyState {
   sun: { azimuth: number; altitude: number } | null;
   /** Which stars, or null for none. Positions are recomputed when this changes. */
   stars: { year: number; latitude: number; siderealHours: number } | null;
+  /** The Moon, or null. */
+  moon: { azimuth: number; altitude: number; size: number; sun: { azimuth: number; altitude: number } } | null;
   /** How much to dim the museum's lights, 0 none, 1 fully. */
   dim: number;
   /** Whether the museum's key light comes from the sun's direction, with this strength (0 keeps the gallery light). */
@@ -149,11 +154,14 @@ export class Sky {
   private readonly domeMaterial: ShaderMaterial;
   private readonly stars: Points;
   private readonly starMaterial: ShaderMaterial;
+  private readonly moon: Mesh;
+  private readonly moonMaterial: ShaderMaterial;
+  private moonLoaded = false;
   private catalogue: Catalogue | null = null;
   private starsKey = "";
   private readonly radius: number;
   readonly sunDirection = new Vector3(0, -1, 0);
-  readonly state: SkyState = { night: 0, dawn: 0, sun: null, stars: null, dim: 0, sunLight: 0 };
+  readonly state: SkyState = { night: 0, dawn: 0, sun: null, stars: null, moon: null, dim: 0, sunLight: 0 };
   /** The horizon colour right now, for the fog and the background. */
   readonly horizonNow = new Color().copy(HORIZON);
 
@@ -236,6 +244,66 @@ export class Sky {
     this.stars.visible = false;
     this.stars.renderOrder = -9;
     this.group.add(this.stars);
+
+    // The Moon: a sphere on the dome with NASA's LRO colour map, lit by the
+    // sun's direction so its phase is the real geometry, fading in with the night.
+    this.moonMaterial = new ShaderMaterial({
+      transparent: true,
+      depthWrite: false,
+      uniforms: { map: { value: null }, sunDir: { value: new Vector3(0, -1, 0) }, night: { value: 0 } },
+      vertexShader: `
+        varying vec2 vUv;
+        varying vec3 vNormal;
+        void main() {
+          vUv = uv;
+          vNormal = normalize(mat3(modelMatrix) * normal);
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }`,
+      fragmentShader: `
+        uniform sampler2D map;
+        uniform vec3 sunDir;
+        uniform float night;
+        varying vec2 vUv;
+        varying vec3 vNormal;
+        void main() {
+          vec3 albedo = texture2D(map, vUv).rgb;
+          // Lambert for the lit side, a trace of earthshine on the dark side.
+          float lit = max(dot(normalize(vNormal), sunDir), 0.0);
+          float terminator = smoothstep(0.0, 0.08, lit);
+          vec3 c = albedo * (0.05 + 1.45 * lit) * (0.5 + 0.5 * terminator);
+          gl_FragColor = vec4(c, night);
+          #include <colorspace_fragment>
+        }`,
+    });
+    this.moon = new Mesh(new MoonGeometry(1, 64, 48), this.moonMaterial);
+    this.moon.visible = false;
+    this.moon.renderOrder = -8;
+    this.moon.frustumCulled = false;
+    this.group.add(this.moon);
+  }
+
+  private loadMoon() {
+    if (this.moonLoaded) return;
+    this.moonLoaded = true;
+    new TextureLoader().load("/sky/moon-4k.jpg", (t) => {
+      t.colorSpace = SRGBColorSpace;
+      t.anisotropy = 8;
+      this.moonMaterial.uniforms.map!.value = t;
+    });
+  }
+
+  /** Put the Moon where the hint says, at the dome, sized to the angle asked for. */
+  private placeMoon(m: NonNullable<SkyState["moon"]>) {
+    const az = m.azimuth * DEG, alt = m.altitude * DEG;
+    const r = this.radius * 0.94;
+    this.moon.position.set(Math.sin(az) * Math.cos(alt), Math.sin(alt), -Math.cos(az) * Math.cos(alt)).multiplyScalar(r);
+    const radius = r * Math.tan((m.size * DEG) / 2);
+    this.moon.scale.setScalar(radius);
+    // The near side faces the viewer: turn the texture's centre meridian toward the museum.
+    this.moon.lookAt(this.group.position);
+    this.moon.rotateY(-Math.PI / 2);
+    const saz = m.sun.azimuth * DEG, salt = m.sun.altitude * DEG;
+    (this.moonMaterial.uniforms.sunDir!.value as Vector3).set(Math.sin(saz) * Math.cos(salt), Math.sin(salt), -Math.cos(saz) * Math.cos(salt));
   }
 
   /** The star catalogue is fetched once, the first time stars are wanted. */
@@ -299,6 +367,13 @@ export class Sky {
     this.starMaterial.uniforms.pixelScale!.value = pixelRatio;
     this.stars.visible = night > 0.01 && stars != null;
     if (stars) void this.placeStars(stars);
+    const moon = state.moon;
+    this.moon.visible = night > 0.01 && moon != null;
+    if (moon) {
+      this.loadMoon();
+      this.placeMoon(moon);
+      this.moonMaterial.uniforms.night!.value = night;
+    }
   }
 
   /** The sky's effect at a distance from a work with this hint: 1 within the radius, 0 a fifth further out. */

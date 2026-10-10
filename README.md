@@ -6,7 +6,7 @@ plane, no walls: forward is later in time, and a side quest stands off to
 the right of the work it belongs with. Works float at their true size, and
 you can walk behind one and see it mirrored.
 
-v1 holds ninety-three works. They run from an Acheulean
+v1 holds a hundred and nineteen works. They run from an Acheulean
 hand axe (a CC0 photogrammetry scan, 300,000 years old) and the Lion-man of
 Hohlenstein-Stadel through eleven cave and rock paintings from five
 continents (with a scanned cast of a Lascaux wall beside the Lascaux
@@ -37,12 +37,21 @@ in Euclid's Elements to Shannon entropy, each in the year and place it
 was written down: Newton's gravitation, Euler's identity, Bayes' theorem,
 Maxwell's equations, Boltzmann's entropy, E = mc², Einstein's field
 equations and the Schrödinger equation, plus Brahmagupta's rules for
-zero and Madhava's series for π from India. Nine pieces of music hang as
-their manuscripts or first editions and play as you approach, from a
+zero and Madhava's series for π from India. Twenty-two recordings play as you approach, nine of them Western
+pieces hung as their manuscripts or first editions, from a
 Brandenburg Concerto to Clair de lune, Joplin's Maple Leaf Rag, Caruso's
 1907 record and the 1860 phonautogram that is the oldest recording of a
 human voice; the Apollo 11 command module carries the landing's
-air-to-ground and the rover the Apollo 16 drive. Seven works are not
+air-to-ground and the rover the Apollo 16 drive. The other thirteen are
+the gramophone's first decades outside Europe and America: Gauhar Jaan
+in Calcutta in 1904, the first Carnatic and Tamil records from Madras
+(Bangalore Nagarathnamma, 1905, and Coimbatore Thayi's Tevaram hymn,
+1910), the Egyptian Nahda (Yusuf al-Manyalawi and 'Abd al-Hayy Hilmi,
+Cairo, 1909), flamenco's founding voices (Juan Breva, Antonio Chacón and
+La Niña de los Peines with Ramón Montoya, 1909 to 1910), the oldest free
+fado (1919), a Peking opera master of 1905, Meiji Japan's gidayū star
+of 1906, an Ottoman gazel with ney, and the earliest recording of
+"Nkosi Sikelel' iAfrika", sung by Sol Plaatje in 1923. Seven works are not
 downloaded but computed while you watch: the Game of Life on a slab in the
 floor, the Mandelbrot set zooming on the GPU, the Lorenz attractor as a
 tube you walk around with a point flying the equations live, Fourier's
@@ -55,7 +64,13 @@ films play as you approach: Muybridge's galloping horse, the Lumière
 train, Méliès's trip to the Moon and the Apollo 11 broadcast. Five pages
 hang at their true size: Euclid on a papyrus from Oxyrhynchus, a Gutenberg
 Bible leaf, the Principia's title page, Darwin's "I think" sketch and the
-first page of Einstein's 1905 relativity paper. Space Shuttle Discovery
+first page of Einstein's 1905 relativity paper. Twelve sculptures stand at true size as
+scans of the works or of museum casts of them: Nefertiti, an Olmec
+colossal head, Myron's Discobolus, the Winged Victory of Samothrace, the
+Laocoön, the Augustus of Prima Porta, a moai, a Benin Queen Mother's
+head, Michelangelo's David (from the full-size bronze cast in Sioux
+Falls) and three Berninis, Apollo and Daphne, the Rape of Proserpina and
+the Medusa. Space Shuttle Discovery
 stands on her gear as the Smithsonian's CC0 scan, 37 m long; Khufu's
 ship, the 4,500-year-old cedar boat from beside the Great Pyramid, lies
 broadside to the lane as a laser scan drawn from 1.6 million coloured
@@ -68,9 +83,11 @@ works: at the Nebra disc it is the night of 1600 BCE over the find-spot,
 with the Pleiades low in the west and the Milky Way across the north
 (laid in by hand along the galactic plane, since the catalogue stops at
 the naked-eye stars), at Stonehenge the sun rises on the solstice
-bearing, along the axis of the stones, over and over, and in the
+bearing, along the axis of the stones, over and over, in the
 Pantheon it is noon on 21 April, the sun through the oculus on the arch
-over the door.
+over the door, and at the Apollo 11 row it is the evening of 20 July 1969
+over Houston, the Moon a crescent in the west drawn large enough to look
+at, with NASA's map of it on a globe below that you can hold.
 
 ## Run it
 
@@ -133,7 +150,8 @@ src/data/collection.json the collection
 src/layout/layout.ts     time -> row, branches beside their anchors -> world position + facing
 src/world/floor.ts       ground, environment light, shadows; the sky and the lights follow sky.ts
 src/world/sky.ts         the sky dome; nights of stars and sunrises near works that ask for them
-src/sims/                programs run live: life, mandelbrot, lorenz, fourier, galton, turing, pyramid
+src/sims/                programs run live: life, mandelbrot, lorenz, fourier, galton, turing, pyramid, moon
+public/sky/moon-*.jpg    NASA's LRO colour map of the Moon, for the sky and the globe
 src/world/axes.ts        year and side-quest labels stencilled on the floor
 src/world/exhibit.ts     one work in the world: image or glTF, placards, shadow
 src/assets/textures.ts   image ladder; sharper rungs load as you approach
@@ -315,7 +333,7 @@ sheet uses when that came later, as it did for Maxwell's.
 
 A simulation is a record of kind `sim` whose version names a `program`
 from `src/sims/` (`life`, `mandelbrot`, `lorenz`, `fourier`, `galton`,
-`turing`, `pyramid`), its `params`, and `bounds` in metres. Date it to the
+`turing`, `pyramid`, `moon`), its `params`, and `bounds` in metres. Date it to the
 idea, not the code. A program is a small module returning an object with
 its base at y = 0 and an update called every frame with the time step and
 the visitor's distance; canvas programs redraw at most twenty times a
@@ -342,7 +360,11 @@ metres) a ray is cast from the opening along the sun's line to where it
 meets the model, and a shaft of light with a bright disc is drawn there:
 noon on 21 April through the Pantheon's oculus, onto the arch over the
 door. The scan's lighting is baked into its photographs, so the beam is
-drawn rather than lit. The sky is fully
+drawn rather than lit. With `stars`, `moon` (`azimuth`, `altitude`,
+`size` in degrees, and the `sun`'s bearing and height, which set the
+phase) hangs the Moon on the dome with the LRO colour map, lit by that
+sun so the phase is the real geometry, fading in with the night. The sky
+is fully
 changed within the radius and back to the gallery's a fifth further out,
 and the lights dim with it. Keep the radius short of the next row.
 Stonehenge's record also sets `display.yaw` so the axis of the stones
@@ -487,7 +509,31 @@ BY 4.0, a photogrammetry scan shown with its flaws. The four films are
 public domain, from Wikimedia Commons: the Muybridge sequence
 reconstructed from the Library of Congress's scan of the 1878 cabinet
 card, the Lumière Society's 1897 negative of the train, the Méliès film
-and NASA's restored Apollo 11 television. The pages are public-domain
+and NASA's restored Apollo 11 television. The sculptures are Sketchfab scans
+under CC BY 4.0 unless noted: Apollo and Daphne by apmcrory, the Rape of
+Proserpina by Grooveholmes, the Medusa by ZeuxisVR,
+the Augustus of Prima Porta by Arqueomodel3D, the Winged Victory from the
+Skulpturhalle Basel cast by Cosmo Wenman, the Laocoön cast by the Bonn
+Center for Digital Humanities, the Olmec head by rmark, the moai by the
+Museo Nacional de Historia Natural de Chile, the Benin Queen Mother head
+by the Muzeum Narodowe w Szczecinie, the David cast by jerryfisher, and,
+CC0, the Discobolus cast by SMK, the National Gallery of Denmark, and the
+Nefertiti cast by the Rijksmuseum van Oudheden, Leiden. Thirteen early
+recordings from outside the Western canon are public domain in the
+United States, where the site is served (recorded before 1926, the
+pieces published before 1931 or traditional): Gauhar Jaan (1904) and
+Sol Plaatje's "Nkosi Sikelel' iAfrika" (1923) via Wikimedia Commons from
+the Bibliothèque nationale de France and the South African Music Archive
+Project; Coimbatore Thayi, Bangalore Nagarathnamma, Yusuf al-Manyalawi,
+'Abd al-Hayy Hilmi, La Niña de los Peines, Juan Breva, Antonio Chacón,
+Sun Juxian and the Odeon Constantinople gazel from the Internet Archive
+(the Great 78 Project and collectors' transfers, including the Centro
+Andaluz de Documentación del Flamenco); the Fado da Severa and Toyotake
+Roshō from the Library of Congress National Jukebox. Where no
+public-domain portrait exists the image is the record's own label, as
+photographed by the archive. The Moon's
+colour map is NASA's CGI Moon Kit from the Lunar Reconnaissance Orbiter
+Camera, public domain. The pages are public-domain
 scans via Wikimedia Commons: the Penn Museum's papyrus, the Berlin
 Gutenberg leaf, the University of Strasbourg's Principia, Darwin Online's
 Notebook B and the Annalen der Physik microfilm of Einstein's paper. The

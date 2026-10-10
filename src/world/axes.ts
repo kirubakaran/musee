@@ -7,13 +7,24 @@
  * far. In the world view, the longitude is printed at the front edge of
  * each cell. Nothing is drawn where nothing stands.
  */
-import { Group } from "three";
+import { Color, Group } from "three";
 import { Text } from "troika-three-text";
 import type { Layout, LayoutConfig } from "../layout/layout";
 import { DEFAULT_LAYOUT } from "../layout/layout";
 
 const FONT = "/fonts/inter-600.woff";
 const INK = 0x5e584e;
+const INK_NIGHT = 0xd9d3c6;
+const tmp = new Color();
+let lastNight = -1;
+
+/** Under a night sky the stencils go pale, or they would vanish on the dark floor. */
+export function setAxesNight(cues: Group, night: number) {
+  if (Math.abs(night - lastNight) < 0.02) return;
+  lastNight = night;
+  const hex = tmp.set(INK).lerp(new Color(INK_NIGHT), night).getHex();
+  cues.traverse((o) => o instanceof Text && (o.color = hex));
+}
 
 /** "35,000 BCE", "c. 200 BCE", "1495", "1490s" for decade bins, "1.5 million years ago". */
 export function eraLabel(year: number, binMonths: number): string {
