@@ -45,6 +45,23 @@ function resolutionOf(r: ModelRung): number {
   return r.points ? Math.round(2 * Math.sqrt(r.points)) : 0;
 }
 
+/**
+ * Dots sized in metres, but never bigger on screen than a fingertip nor
+ * smaller than a pixel: a point a hand's breadth from the eye would
+ * otherwise cover half the view, and a cloud seen from inside becomes
+ * bubbles. The clamp is in pixels of the drawing buffer.
+ */
+function pointMaterial(size: number): PointsMaterial {
+  const m = new PointsMaterial({ size, sizeAttenuation: true, vertexColors: true, map: dot(), alphaTest: 0.5, transparent: false });
+  m.onBeforeCompile = (shader) => {
+    shader.uniforms.maxPointPx = { value: 18 * (typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 2) : 1) };
+    shader.vertexShader = shader.vertexShader
+      .replace("uniform float scale;", "uniform float scale;\nuniform float maxPointPx;")
+      .replace("if ( isPerspective ) gl_PointSize *= ( scale / - mvPosition.z );", "if ( isPerspective ) gl_PointSize = clamp( gl_PointSize * ( scale / - mvPosition.z ), 1.0, maxPointPx );");
+  };
+  return m;
+}
+
 /** Free everything a loaded glb scene holds on the GPU. */
 export function disposeObject(root: Object3D) {
   root.traverse((o) => {
@@ -100,13 +117,13 @@ export class ModelLadder {
       .then((gltf) => {
         const root = gltf.scene;
         // A point cloud's dots are sized in metres: the record's size at the top rung,
-        // larger on a thinner rung so the surface still reads as solid.
+        // larger on a thinner rung so the surface still reads as solid from a distance.
         const top = this.rungs.at(-1)?.points;
-        const size = this.pointSize * (top && rung.points ? Math.sqrt(top / rung.points) : 1);
+        const size = this.pointSize * (top && rung.points ? Math.pow(top / rung.points, 0.4) : 1);
         root.traverse((o) => {
           if (o instanceof Points) {
             (o.material as Material).dispose();
-            o.material = new PointsMaterial({ size, sizeAttenuation: true, vertexColors: true, map: dot(), alphaTest: 0.5, transparent: false });
+            o.material = pointMaterial(size);
             return;
           }
           if (!(o instanceof Mesh)) return;
